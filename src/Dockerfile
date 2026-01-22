@@ -23,6 +23,10 @@ COPY . .
 
 # Accept ENV_CONTENT as a build argument (passed securely from GitHub Actions)
 # This allows the .env file to be created at build time without committing it to the repo
+# NOTE: Build arguments are visible in docker history. For production use, consider:
+#   - Using BuildKit secrets (--secret flag) for enhanced security
+#   - Using a multi-stage build to exclude sensitive data from final image
+#   - Mounting .env at runtime instead of baking it into the image
 ARG ENV_CONTENT
 # Write the ENV_CONTENT to .env file if provided
 # This approach ensures secrets are not checked into source control

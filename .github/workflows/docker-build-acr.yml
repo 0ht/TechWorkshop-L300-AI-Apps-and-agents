@@ -54,6 +54,12 @@ jobs:
       # IMPORTANT: Build context is set to ./src directory only
       # The ENV_CONTENT build argument securely passes the .env file content
       # without committing it to the repository or exposing it in logs
+      # 
+      # NOTE: Build arguments are visible in docker image history.
+      # For enhanced production security, consider:
+      #   - Using BuildKit secrets (--secret flag) instead of build args
+      #   - Using a multi-stage build to exclude sensitive data
+      #   - Mounting .env at container runtime instead of build time
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -66,7 +72,7 @@ jobs:
           # Tag the image with 'latest'
           tags: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/techworkshop-l300:latest
           # Pass the ENV secret as a build argument
-          # The Dockerfile will use this to create /app/.env at build time
+          # The Dockerfile will use this to create .env at build time
           build-args: |
             ENV_CONTENT=${{ secrets.ENV }}
           # Enable build cache for faster subsequent builds
