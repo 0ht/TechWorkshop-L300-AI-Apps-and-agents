@@ -21,8 +21,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the code
 COPY . .
 
-# Copy .env file into the image (for python-dotenv)
-COPY .env .env
+# Accept ENV_CONTENT as a build argument (passed securely from GitHub Actions)
+# This allows the .env file to be created at build time without committing it to the repo
+ARG ENV_CONTENT
+# Write the ENV_CONTENT to .env file if provided
+# This approach ensures secrets are not checked into source control
+RUN if [ -n "$ENV_CONTENT" ]; then echo "$ENV_CONTENT" > /app/.env; fi
 
 # Expose the port (default FastAPI/uvicorn port)
 EXPOSE 8000
