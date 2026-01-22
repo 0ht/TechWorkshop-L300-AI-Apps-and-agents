@@ -28,7 +28,7 @@ ARG ENV_CONTENT
 # This approach ensures secrets are not checked into source control
 # Using printf instead of echo for better security (avoids process list exposure)
 # The %s format preserves multi-line content without adding extra newlines
-RUN if [ -n "$ENV_CONTENT" ]; then printf '%s' "$ENV_CONTENT" > /app/.env; fi
+RUN if [ -n "$ENV_CONTENT" ]; then printf '%s' "$ENV_CONTENT" > .env; fi
 
 # Expose the port (default FastAPI/uvicorn port)
 EXPOSE 8000
