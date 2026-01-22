@@ -26,7 +26,8 @@ COPY . .
 ARG ENV_CONTENT
 # Write the ENV_CONTENT to .env file if provided
 # This approach ensures secrets are not checked into source control
-RUN if [ -n "$ENV_CONTENT" ]; then echo "$ENV_CONTENT" > /app/.env; fi
+# Using printf instead of echo for better security (avoids process list exposure)
+RUN if [ -n "$ENV_CONTENT" ]; then printf "%s\n" "$ENV_CONTENT" > /app/.env; fi
 
 # Expose the port (default FastAPI/uvicorn port)
 EXPOSE 8000

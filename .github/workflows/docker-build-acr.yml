@@ -77,5 +77,5 @@ jobs:
       - name: Build summary
         run: |
           echo "✅ Docker image successfully built and pushed to ACR"
-          echo "📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/techworkshop-l300:latest"
+          echo "📦 Image: techworkshop-l300:latest"
           echo "🔐 .env file securely injected at build time"
