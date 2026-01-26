@@ -21,8 +21,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the code
 COPY . .
 
-# Copy .env file into the image (for python-dotenv)
-COPY .env .env
+# Accept ENV_CONTENT as a build argument (passed securely from GitHub Actions)
+# This allows the .env file to be created at build time without committing it to the repo
+# NOTE: Build arguments are visible in docker history. For production use, consider:
+#   - Using BuildKit secrets (--secret flag) for enhanced security
+#   - Using a multi-stage build to exclude sensitive data from final image
+#   - Mounting .env at runtime instead of baking it into the image
+ARG ENV_CONTENT
+# Write the ENV_CONTENT to .env file if provided
+# This approach ensures secrets are not checked into source control
+# Using printf instead of echo for better security (avoids process list exposure)
+# The %s format preserves multi-line content without adding extra newlines
+RUN if [ -n "$ENV_CONTENT" ]; then printf '%s' "$ENV_CONTENT" > .env; fi
 
 # Expose the port (default FastAPI/uvicorn port)
 EXPOSE 8000

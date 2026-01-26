@@ -1,0 +1,87 @@
+# GitHub Actions workflow to build and deploy Docker image to Azure Container Registry (ACR)
+# This workflow is triggered when code is pushed to the main branch
+# 
+# Required Repository Secrets:
+# - AZURE_CONTAINER_REGISTRY: The ACR registry name (e.g., myregistry.azurecr.io)
+# - AZURE_CONTAINER_REGISTRY_USERNAME: The ACR username for authentication
+# - AZURE_CONTAINER_REGISTRY_PASSWORD: The ACR password for authentication
+# - ENV: The content of the .env file to be securely injected into the Docker image at build time
+#
+# Security Notes:
+# - The .env file is NOT committed to the repository
+# - ENV secret is passed as a build argument and written to /app/.env inside the container
+# - Secrets are not exposed in logs due to GitHub Actions automatic masking
+# - Build context is limited to src/ directory only
+
+name: Build and Deploy to ACR
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main
+  
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+
+# Set minimal permissions for security
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Login to Azure Container Registry
+      # Uses ACR credentials from repository secrets for authentication
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+      
+      # Step 3: Set up Docker Buildx for advanced build features
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Step 4: Build and push Docker image to ACR
+      # IMPORTANT: Build context is set to ./src directory only
+      # The ENV_CONTENT build argument securely passes the .env file content
+      # without committing it to the repository or exposing it in logs
+      # 
+      # NOTE: Build arguments are visible in docker image history.
+      # For enhanced production security, consider:
+      #   - Using BuildKit secrets (--secret flag) instead of build args
+      #   - Using a multi-stage build to exclude sensitive data
+      #   - Mounting .env at container runtime instead of build time
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          # Set build context to src/ directory only (where Dockerfile is located)
+          context: ./src
+          # Use the Dockerfile in src/ directory
+          file: ./src/Dockerfile
+          # Push the image to ACR
+          push: true
+          # Tag the image with 'latest'
+          tags: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/techworkshop-l300:latest
+          # Pass the ENV secret as a build argument
+          # The Dockerfile will use this to create .env at build time
+          build-args: |
+            ENV_CONTENT=${{ secrets.ENV }}
+          # Enable build cache for faster subsequent builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      # Step 5: Output success message
+      - name: Build summary
+        run: |
+          echo "✅ Docker image successfully built and pushed to ACR"
+          echo "📦 Image: techworkshop-l300:latest"
+          echo "🔐 .env file securely injected at build time"
